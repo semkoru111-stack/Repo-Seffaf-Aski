@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "Lead": {
+      "title": "Lead",
+      "description": "Contact form submission details",
+      "type": "object",
+      "properties": {
+        "fullName": {
+          "type": "string",
+          "description": "Full name of the contact"
+        },
+        "companyName": {
+          "type": "string",
+          "description": "Name of the company"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone number"
+        },
+        "message": {
+          "type": "string",
+          "description": "Detailed message or inquiry"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Submission timestamp"
+        }
+      },
+      "required": ["fullName", "phone", "message", "createdAt"]
+    }
+  },
+  "firestore": {
+    "leads/{leadId}": {
+      "schema": "Lead",
+      "description": "Collection of incoming business leads"
+    }
+  }
+}

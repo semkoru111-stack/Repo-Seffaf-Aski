@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Helpers
+    function isSignedIn() { return request.auth != null; }
+    function incoming() { return request.resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    
+    // Lead Validation Blueprint
+    function isValidLead(data) {
+      return data.keys().hasAll(['fullName', 'phone', 'message', 'createdAt'])
+        && data.keys().size() <= 5
+        && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100
+        && data.phone is string && data.phone.size() >= 10 && data.phone.size() <= 20
+        && data.message is string && data.message.size() >= 5 && data.message.size() <= 2000
+        && (data.get('companyName', '') is string && data.get('companyName', '').size() <= 100)
+        && data.createdAt == request.time;
+    }
+
+    // Leads Collection
+    match /leads/{leadId} {
+      allow create: if isValidId(leadId) && isValidLead(incoming());
+      // No public read/list/update/delete for security
+      allow read, update, delete: if false;
+    }
+  }
+}

@@ -1,14 +1,31 @@
 import { motion } from "motion/react";
 import { Phone, Mail, MapPin, CheckCircle2, ChevronRight, Menu, X, Award, Factory, Users } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db, handleFirestoreError, OperationType } from "./lib/firebase";
 
 export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [formData, setFormData] = useState({
+    fullName: '',
+    companyName: '',
+    phone: '',
+    message: ''
+  });
 
   const phoneNum = "0535 840 8319";
   const email = "semkoru111@gmail.com";
   const address = "Osman Ağa Mahallesi Çilek Sokak No 34 Kadıköy İstanbul";
   const brandName = "Asya Şeffaf Askı";
+
+  const fadeIn = {
+    initial: { opacity: 0, y: 20 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true },
+    transition: { duration: 0.6 }
+  };
 
   const navLinks = [
     { name: "Anasayfa", href: "#hero" },
@@ -17,11 +34,25 @@ export default function App() {
     { name: "İletişim", href: "#contact" },
   ];
 
-  const fadeIn = {
-    initial: { opacity: 0, y: 20 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true },
-    transition: { duration: 0.6 }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    try {
+      const path = 'leads';
+      await addDoc(collection(db, path), {
+        ...formData,
+        createdAt: serverTimestamp()
+      });
+      setSubmitStatus('success');
+      setFormData({ fullName: '', companyName: '', phone: '', message: '' });
+    } catch (error) {
+      setSubmitStatus('error');
+      handleFirestoreError(error, OperationType.WRITE, 'leads');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -428,46 +459,89 @@ export default function App() {
                 className="bg-gray-100 p-10 rounded-[3rem] border-4 border-white shadow-2xl"
                 {...fadeIn}
               >
-                <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-                  <div className="grid sm:grid-cols-2 gap-6">
+                {submitStatus === 'success' ? (
+                  <div className="text-center py-12 space-y-6">
+                    <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
+                      <CheckCircle2 size={40} />
+                    </div>
+                    <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Mesajınız Alındı</h3>
+                    <p className="text-slate-600 font-medium">Talebiniz bize ulaştı. En kısa sürede sizinle iletişime geçeceğiz.</p>
+                    <button 
+                      onClick={() => setSubmitStatus('idle')}
+                      className="text-indigo-600 font-black uppercase tracking-widest text-sm hover:underline"
+                    >
+                      Yeni Mesaj Gönder
+                    </button>
+                  </div>
+                ) : (
+                  <form className="space-y-6" onSubmit={handleSubmit}>
+                    <div className="grid sm:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-xs font-black uppercase tracking-widest text-slate-500">Adınız Soyadınız</label>
+                        <input 
+                          required
+                          type="text" 
+                          placeholder="Örn: Ahmet Yılmaz"
+                          value={formData.fullName}
+                          onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                          className="w-full px-5 py-4 bg-white border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all font-bold"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-black uppercase tracking-widest text-slate-500">Firma Adı</label>
+                        <input 
+                          type="text" 
+                          placeholder="Örn: Asya Tekstil"
+                          value={formData.companyName}
+                          onChange={(e) => setFormData({...formData, companyName: e.target.value})}
+                          className="w-full px-5 py-4 bg-white border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all font-bold"
+                        />
+                      </div>
+                    </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-black uppercase tracking-widest text-slate-500">Adınız Soyadınız</label>
+                      <label className="text-xs font-black uppercase tracking-widest text-slate-500">Telefon Numaranız</label>
                       <input 
-                        type="text" 
-                        placeholder="Örn: Ahmet Yılmaz"
+                        required
+                        type="tel" 
+                        placeholder="05XX XXX XX XX"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
                         className="w-full px-5 py-4 bg-white border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all font-bold"
                       />
                     </div>
                     <div className="space-y-2">
-                       <label className="text-xs font-black uppercase tracking-widest text-slate-500">Firma Adı</label>
-                       <input 
-                        type="text" 
-                        placeholder="Örn: Asya Tekstil"
+                      <label className="text-xs font-black uppercase tracking-widest text-slate-500">Mesajınız</label>
+                      <textarea 
+                        required
+                        rows={4}
+                        placeholder="İhtiyacınızı detaylandırın..."
+                        value={formData.message}
+                        onChange={(e) => setFormData({...formData, message: e.target.value})}
                         className="w-full px-5 py-4 bg-white border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all font-bold"
-                      />
+                      ></textarea>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500">Telefon Numaranız</label>
-                    <input 
-                      type="tel" 
-                      placeholder="05XX XXX XX XX"
-                      className="w-full px-5 py-4 bg-white border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all font-bold"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-500">Mesajınız</label>
-                    <textarea 
-                      rows={4}
-                      placeholder="İhtiyacınızı detaylandırın..."
-                      className="w-full px-5 py-4 bg-white border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all font-bold"
-                    ></textarea>
-                  </div>
-                  <button className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 flex items-center justify-center gap-3">
-                    <Mail size={20} />
-                    Mesaj Gönder
-                  </button>
-                </form>
+                    
+                    {submitStatus === 'error' && (
+                      <p className="text-red-500 text-sm font-bold bg-red-50 p-4 rounded-xl border border-red-100">
+                        Bir hata oluştu. Lütfen daha sonra tekrar deneyin veya doğrudan arayın.
+                      </p>
+                    )}
+
+                    <button 
+                      disabled={isSubmitting}
+                      className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 flex items-center justify-center gap-3 disabled:opacity-50"
+                    >
+                      {isSubmitting ? (
+                        <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <>
+                          <Mail size={20} />
+                          Mesaj Gönder
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
               </motion.div>
             </div>
           </div>

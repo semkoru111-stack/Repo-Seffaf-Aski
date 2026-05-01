@@ -1,20 +1,36 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Asya Şeffaf Askı
 
-# Run and deploy your AI Studio app
+25 yıllık tecrübe ile kaliteli şeffaf askı ve şerit çözümleri.
 
-This contains everything you need to run your app locally.
+## Kurulum ve Çalıştırma
 
-View your app in AI Studio: https://ai.studio/apps/dd206ca0-48af-45ca-be7f-4b8037ec5740
+1. Bağımlılıkları yükleyin:
+   ```bash
+   npm install
+   ```
 
-## Run Locally
+2. Geliştirme modunda çalıştırın:
+   ```bash
+   npm run dev
+   ```
 
-**Prerequisites:**  Node.js
+3. Prodüksiyon build'i alın:
+   ```bash
+   npm run build
+   ```
 
+4. Prodüksiyon sunucusunu başlatın:
+   ```bash
+   npm run start
+   ```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Firebase App Hosting Notları
+
+Bu proje Firebase App Hosting (Cloud Run) için optimize edilmiştir:
+- Sunucu `process.env.PORT` üzerinden listen yapar.
+- Host olarak `0.0.0.0` kullanılır.
+- Statik dosyalar `dist` klasöründen servis edilir.
+
+---
+**İletişim:** semkoru111@gmail.com
+**Tel:** 0535 840 8319
